@@ -1,0 +1,159 @@
+<!-- rflink device node -->
+<script type="text/javascript">
+    RED.nodes.registerType('rflink device', {
+        category: 'config',
+        defaults: {
+            devname: { value: "", required: true },
+            devid: {
+                    value: "",
+                    required: true,
+                    validate: RED.validators.regex(/[0-9a-fA-F]+/)
+                }
+        },
+        label: function() {
+            return this.devname + "-" + this.devid;
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="rflink device">
+    <div class="form-row">
+        <label for="node-config-input-devname"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-config-input-devname">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-devid"><i class="fa fa-hashtag"></i> ID</label>
+        <input type="text" id="node-config-input-devid">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="rflink device">
+<p>This node is to maintain the list of devices talking to RFLink gateway.
+If you want more detail about RFLink gateway protocol,
+please visit http://www.nemcon.nl/blog2/protref.</p>
+
+<p>Name is device protocol name of RFLink gateway and ID is value of ID of device.
+For example, UPM/Esic is Name and 0001 is ID for this packet: 20;2D;UPM/Esic;ID=0001;TEMP=...;
+</p>
+</script>
+
+<!-- rflink in node -->
+<script type="text/javascript">
+    RED.nodes.registerType('rflink in',{
+        category: 'input',
+        color: '#a6bbcf',
+        defaults: {
+            device: { value: "", type: "rflink device" },
+            name: { value: "" }
+        },
+        inputs: 1,
+        outputs: 1,
+        align: 'left',
+        icon: "rflink.png",
+        label: function() {
+            return this.name || "rflink";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="rflink in">
+    <div class="form-row">
+        <label for="node-input-device"><i class="fa fa-feed"></i> Device</label>
+        <input type="text" id="node-input-device">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="rflink in">
+<p>This node parses an incoming packet from RFLink gateway.
+If you want more detail about RFLink gateway protocol,
+please visit http://www.nemcon.nl/blog2/protref.
+</p>
+
+<h3>Input</h3>
+<p><code>msg.payload</code> is assumed to be one RFLink gateway packet.
+So, it might be required to split messages from serial node.</p>
+
+<h3>Output</h3>
+<p>O<code>msg.payload</code> can have multiple values.
+For example, AcuriteV2 has TEMP, HUM and BAT values,
+so output <code>msg.payload</code> will be {temp:29.6, hum:45, BAT:OK}.</p>
+
+<p><code>msg.devname</code> will have a device name.</p>
+
+<p><code>msg.devid</code> will have a device ID.</p>
+
+</script>
+
+<!-- rflink out node -->
+<script type="text/javascript">
+    RED.nodes.registerType('rflink out',{
+        category: 'output',
+        color: '#a6bbcf',
+        defaults: {
+            device: { value: "", type: "rflink device" },
+            target: { value: "" },
+            command: { value: "" },
+            milightcontrol: { value: "" },
+            name: { value: "" }
+        },
+        inputs: 1,
+        outputs: 1,
+        align: 'right',
+        icon: "rflink.png",
+        label: function() {
+            return this.name || "rflink";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="rflink out">
+    <div class="form-row">
+        <label for="node-input-device"><i class="fa fa-feed"></i> Device</label>
+        <input type="text" id="node-input-device">
+    </div>
+    <div class="form-row">
+        <label for="node-input-target"><i class="fa fa-bullseye"></i> Target</label>
+        <input type="text" id="node-input-target">
+    </div>
+    <div class="form-row">
+        <label for="node-input-command"><i class="fa fa-toggle-on"></i> Command</label>
+        <input type="text" id="node-input-command">
+    </div>
+    <div class="form-row">
+        <label for="node-input-milightcontrol"><i class="fa fa-lightbulb-o"></i> MiLight control</label>
+        <input type="text" id="node-input-milightcontrol">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="rflink out">
+<p>This node returns an outgoing packet to be sent to RFLink gateway.
+If you want more detail about RFLink gateway protocol,
+please visit http://www.nemcon.nl/blog2/protref.
+</p>
+
+<h3>Input</h3>
+<p>If you want to specify target by <code>msg.target</code>,  please leave Target to be empty. If Target is set, it will overwrite <code>msg.target</code> given in msg.</p>
+
+<p>If you want to specify command(ON/OFF/ALLON/ALLOFF/UP/DOWN/STOP/PAIR and so on) by <code>msg.command</code>,  please leave Command to be empty. If Command is set, it will overwrite <code>msg.command</code> given in msg.</p>
+
+<p>If you want to specify MiLight control by <code>msg.milightcontrol</code>,  please leave MiLight control to be empty. If MiLight control is set, it will overwrite <code>msg.milightcontrol</code> given in msg.</p>
+
+<h3>Output</h3>
+<p><code>msg.payload</code> will be a RFLink packet.
+For example, 10;Eurodomest;123456;01;ON; will be returned when Input <code>msg.payload</code> is ON.
+</p>
+
+<p><code>msg.target</code>, <code>msg.command</code>, <code>msg.milightcontrol</code> will also be included.</p>
+
+<p><code>msg.devname</code> will have a device name.</p>
+
+<p><code>msg.devid</code> will have a device ID.</p>
+</script>
