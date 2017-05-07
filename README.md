@@ -14,4 +14,5 @@ For example, if the packet from RFLink gateway is `20;32;Auriol;ID=008f;TEMP=00d
 It's also required to know what kind of values are provided. In the above example, the device has 2 values, TEMP and BAT. The `msg.payload` will have `msg.payload.temp` and `msg.payload.bat`.
 
 ## Credits
-Node icon is downloaded from www.flaticon.com - http://www.flaticon.com/free-icon/modem_99558.  
+*   Special thanks to Scargill (http://tech.scargill.net) as I borrowed his code that he shared at http://tech.scargill.net/rflink-and-node-red. 
+*   Node icon is downloaded from www.flaticon.com - http://www.flaticon.com/free-icon/modem_99558.  
