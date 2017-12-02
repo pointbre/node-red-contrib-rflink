@@ -128,8 +128,8 @@ module.exports = function(RED) {
                 case "SET_LEVEL": result.set_level = parseInt(value[1], 10); break;
                 case "TEMP": result.temp = parseInt(value[1], 16);
                   if ((result.temp & 0x8000) > 0) {  // temperature is an signed int16
-                       msg.temp = msg.temp & 0x7FFF;
-                       msg.temp = 0-msg.temp;
+                       result.temp = result.temp & 0x7FFF;
+                       result.temp = 0-result.temp;
                   }
                   result.temp = result.temp / 10;
                   break;
