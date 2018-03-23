@@ -7,7 +7,7 @@ module.exports = function(RED) {
         this.devid = config.devid;
     }
     RED.nodes.registerType("rflink device", RFLinkDeviceNode);
-    
+
     // rflink in node
     function RFLinkInNode(config) {
         RED.nodes.createNode(this, config);
@@ -16,13 +16,13 @@ module.exports = function(RED) {
         var node = this;
         this.on('input', function(msg) {
             var valid = true;
-            
+
             if (!node.device) {
                 valid = false;
                 node.error('Please set rflink device to be used.');
                 node.status({ fill: "red", shape: "ring", text: "device not provided" });
             }
-            
+
             if (valid) {
                 // Check if the message is for the given device
                 // 20;01;AcuriteV2;ID=e9a4;TEMP=00d8;HUM=47;BAT=OK;
@@ -34,13 +34,13 @@ module.exports = function(RED) {
                     msg.payload = parseRFLinkPackets(msg.payload);
                     msg.devname = node.device.devname;
                     msg.devid = node.device.devid;
-                    node.send(msg);               
+                    node.send(msg);
                 }
             }
         });
     }
     RED.nodes.registerType("rflink in", RFLinkInNode);
-    
+
     // rflink out node
     function RFLinkOutNode(config) {
         RED.nodes.createNode(this, config);
@@ -52,13 +52,13 @@ module.exports = function(RED) {
         var node = this;
         this.on('input', function(msg) {
             var valid = true;
-            
+
             if (!node.device) {
                 valid = false;
                 node.error('Please set rflink device to be used.');
                 node.status({ fill: "red", shape: "ring", text: "device not provided" });
             }
-            
+
             if (valid) {
                 if (typeof msg.target == 'undefined' && !node.target) {
                     valid = false;
@@ -66,20 +66,20 @@ module.exports = function(RED) {
                     node.status({ fill: "red", shape: "ring", text: "target not provided" });
                 }
             }
-            
+
             if (valid) {
                 if (typeof msg.command == 'undefined' && !node.command) {
                     valid = false;
                     node.error('Please set command to be used.');
                     node.status({ fill: "red", shape: "ring", text: "command not provided" });
                 }
-            }            
-            
+            }
+
             msg.devname = node.device.devname;
             msg.devid = node.device.devid;
             msg.target = node.target || msg.target;
             msg.command = node.command || msg.command;
-            
+
             if (valid && msg.devname == "MiLightv1") {
                 if (typeof msg.milightcontrol == 'undefined' && !node.milightcontrol) {
                     valid = false;
@@ -88,7 +88,7 @@ module.exports = function(RED) {
                 }
             }
             msg.milightcontrol = node.milightcontrol || msg.milightcontrol;
-            
+
             var packet;
             if (valid) {
                 // 10;Kaku;00004d;1;OFF;
@@ -99,24 +99,24 @@ module.exports = function(RED) {
                     packet = "10;" + msg.devname + ";" + msg.devid + ";" + msg.target + ";" + msg.milightcontrol + ";" + msg.command + ";";
                 }
             }
-            
+
             if (packet) {
                 node.status({ fill: "green", shape: "ring", text: "packet written" });
                 msg.payload = packet;
-                node.send(msg);               
+                node.send(msg);
             }
         });
     }
     RED.nodes.registerType("rflink out", RFLinkOutNode);
-    
+
     // parse function for RFLink packets
     // see original function code: http://tech.scargill.net/rflink-and-node-red/
     function parseRFLinkPackets(packet) {
         var result = {};
         var parts = packet.split(";");
-   
+
         result.name = parts[2];
-         
+
         var idx = 3;
         var value;
         while (idx < parts.length) {
@@ -126,7 +126,13 @@ module.exports = function(RED) {
                 case "SWITCH": result.switch = value[1]; break;
                 case "CMD": result.cmd = value[1]; break;
                 case "SET_LEVEL": result.set_level = parseInt(value[1], 10); break;
-                case "TEMP": result.temp = parseInt(value[1], 16) / 10; break;
+                case "TEMP": result.temp = parseInt(value[1], 16);
+                  if ((result.temp & 0x8000) > 0) {  // temperature is an signed int16
+                       result.temp = result.temp & 0x7FFF;
+                       result.temp = 0-result.temp;
+                  }
+                  result.temp = result.temp / 10;
+                  break;
                 case "HUM": result.hum = parseInt(value[1], 10); break;
                 case "BARO": result.baro = parseInt(value[1], 16); break;
                 case "HSTATUS": result.hstatus = parseInt(value[1], 10); break;
@@ -139,7 +145,7 @@ module.exports = function(RED) {
                 case "WINSP": result.winsp = parseInt(value[1], 16) / 10; break;
                 case "AWINSP": result.awinsp = parseInt(value[1], 16) / 10; break;
                 case "WINGS": result.wings = parseInt(value[1], 16); break;
-                case "WINDIR": result.windir = parseInt(value[1], 10); break;
+                case "WINDIR": result.windir = parseInt(value[1], 10) * 22.5; break; // Wind direction 0-15 reflecting 0-360 degrees in 22.5 degree steps (decimal)
                 case "WINCHL": result.winchl = parseInt(value[1], 16); break;
                 case "WINTMP": result.wintmp = parseInt(value[1], 16); break;
                 case "CHIME": result.chime = parseInt(value[1], 10); break;
@@ -159,8 +165,7 @@ module.exports = function(RED) {
             }
             idx++;
         }
-       
+
         return result;
     }
 }
-                                                 
